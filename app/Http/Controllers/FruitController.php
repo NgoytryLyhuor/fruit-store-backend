@@ -154,6 +154,15 @@ class FruitController extends Controller
 
     public function destroy(Fruit $fruit)
     {
+        // Prevent deletion if fruit exists in order_items
+        $hasOrderItems = \DB::table('order_items')->where('fruit_id', $fruit->id)->exists();
+        if ($hasOrderItems) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Cannot delete fruit: it exists in order items.'
+            ], 400);
+        }
+
         // Delete associated image file
         if ($fruit->image_url && strpos($fruit->image_url, url('')) === 0) {
             $imagePath = str_replace(url(''), public_path(''), $fruit->image_url);

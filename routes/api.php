@@ -3,6 +3,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FruitController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\NotificationController;
 
 // Public routes
 Route::post('/auth/register', [AuthController::class, 'register']);
@@ -26,6 +27,12 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/user', [AuthController::class, 'users']);
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/update', [AuthController::class, 'update']);
+
+    // Notification routes
+    Route::get('/notification-settings', [NotificationController::class, 'getSettings']);
+    Route::put('/notification-settings', [NotificationController::class, 'updateSettings']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount']);
 
     // Order routes
     Route::get('/orders', [OrderController::class, 'index']);

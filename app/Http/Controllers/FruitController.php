@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Fruit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use App\Jobs\ProcessNewProductNotifications;
 
 class FruitController extends Controller
 {
@@ -47,7 +48,6 @@ class FruitController extends Controller
         $categories = Fruit::select('category')->distinct()->pluck('category');
         return response()->json($categories);
     }
-
 
     public function show(Fruit $fruit)
     {
@@ -94,6 +94,11 @@ class FruitController extends Controller
         }
 
         $fruit = Fruit::create($data);
+
+        // Dispatch notification job to queue (non-blocking) - THIS IS THE KEY CHANGE
+        ProcessNewProductNotifications::dispatch($fruit)
+            ->onQueue('notifications')
+            ->delay(now()->addSeconds(5)); // Small delay to ensure fruit is fully created
 
         return response()->json([
             'message' => 'Insert successful',

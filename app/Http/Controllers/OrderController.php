@@ -1,11 +1,14 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Mail\ChangeStatusNotification;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Fruit;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class OrderController extends Controller
 {
@@ -158,6 +161,8 @@ class OrderController extends Controller
             $order->update(['status' => $request->status]);
             $order->load('orderItems.fruit');
 
+            $this->notifyCustomersAboutChangeStatus($order);
+
             return response()->json([
                 'status' => true, // Note: changed to match frontend expectation
                 'data' => $order,
@@ -239,6 +244,51 @@ class OrderController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    protected function notifyCustomersAboutChangeStatus($order)
+    {
+        \Log::debug('-----------------------------------------------------');
+        \Log::debug("order data : " . json_encode($order->toArray()));
+
+        $user = User::find($order->user_id);
+
+        if (!$user || !$user->email) {
+            \Log::debug('User not found or email missing for order status notification.', [
+                'order_id' => $order->id,
+                'user' => $user
+            ]);
+            return;
+        }
+
+        try {
+            // Create database notification
+            $user->notifications()->create([
+                'user_id' => $order->user_id,
+                'type' => 'status_update',
+                'message' => "Your order #{$order->id} status has been updated to {$order->status}.",
+                'data' => json_encode([  // Convert array to JSON string
+                    'order_id' => $order->id,
+                    'order_status' => $order->status,
+                    'total_amount' => $order->total_amount,
+                ])
+            ]);
+            \Log::debug('Database notification created for user.', [
+                'user_id' => $user->id,
+                'order_id' => $order->id
+            ]);
+
+            // Send email notification
+            Mail::to($user->email)->send(new ChangeStatusNotification($order, $user));
+            \Log::debug('Email notification sent.', [
+                'user_email' => $user->email,
+                'order_id' => $order->id
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error("Failed to notify user_id {$user->id} about order status update: " . $e->getMessage());
+        }
+        \Log::debug('-----------------------------------------------------');
     }
 
 }

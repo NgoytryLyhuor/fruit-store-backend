@@ -470,7 +470,7 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             \Log::error('Google redirect error: ' . $e->getMessage());
 
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+            $frontendUrl = env('FRONTEND_URL', 'https://pure-flave-nature.vercel.app');
             return redirect()->away($frontendUrl . '/login?error=redirect_failed');
         }
     }
@@ -483,7 +483,7 @@ class AuthController extends Controller
             if (!$googleUser || !$googleUser->email) {
                 \Log::error('Google user data incomplete', ['user' => $googleUser]);
 
-                $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+                $frontendUrl = env('FRONTEND_URL', 'https://pure-flave-nature.vercel.app');
                 return redirect()->away($frontendUrl . '/login?error=incomplete_user_data');
             }
 
@@ -491,7 +491,7 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             \Log::error('Google callback error: ' . $e->getMessage());
 
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
+            $frontendUrl = env('FRONTEND_URL', 'https://pure-flave-nature.vercel.app');
             return redirect()->away($frontendUrl . '/login?error=callback_failed');
         }
     }

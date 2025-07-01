@@ -213,9 +213,9 @@
                 <div class="total-amount">Total: ${{ number_format($order->total_amount, 2) }}</div>
             </div>
 
-            <p>If you have any questions about your order, please contact our support team.</p>
+            <p align="center">If you have any questions about your order, please contact our support team.</p>
 
-            <p>Thank you for your business!</p>
+            <p align="center">Thank you for your business!</p>
         </div>
 
         <div class="footer">

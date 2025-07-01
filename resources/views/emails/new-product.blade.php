@@ -1,5 +1,5 @@
 @php
-    $frontendUrl = env('APP_FRONTEND_URL', 'http://localhost:5173');
+    $frontendUrl = env('APP_FRONTEND_URL');
 @endphp
 <!DOCTYPE html>
 <html>

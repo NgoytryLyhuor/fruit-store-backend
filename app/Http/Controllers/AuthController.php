@@ -487,9 +487,53 @@ class AuthController extends Controller
                 return redirect()->away($frontendUrl . '/login?error=incomplete_user_data');
             }
 
-            // (Continue your logic here...)
+            // Check if user already exists
+            $user = User::where('email', $googleUser->email)->first();
+
+            if ($user) {
+                // User exists, update their Google info
+                $user->update([
+                    'google_id' => $googleUser->id,
+                    'avatar' => $googleUser->avatar,
+                ]);
+            } else {
+                // Create new user
+                $names = explode(' ', $googleUser->name, 2);
+                $firstName = $names[0];
+                $lastName = isset($names[1]) ? $names[1] : '';
+
+                $user = User::create([
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'email' => $googleUser->email,
+                    'google_id' => $googleUser->id,
+                    'avatar' => $googleUser->avatar,
+                    'password' => Hash::make(Str::random(24)), // Random password since they login with Google
+                    'role' => 'customer',
+                    'email_verified_at' => now(), // Google accounts are considered verified
+                ]);
+            }
+
+            // Generate JWT token
+            $token = JWTAuth::fromUser($user);
+
+            // Log successful login
+            \Log::info('Google OAuth login successful', [
+                'user_id' => $user->id,
+                'email' => $user->email
+            ]);
+
+            // Redirect to frontend with token
+            $frontendUrl = env('FRONTEND_URL');
+            return redirect()->away($frontendUrl . '/auth/callback?token=' . $token);
+        } catch (\Laravel\Socialite\Two\InvalidStateException $e) {
+            \Log::error('Google OAuth Invalid State: ' . $e->getMessage());
+
+            $frontendUrl = env('FRONTEND_URL');
+            return redirect()->away($frontendUrl . '/login?error=invalid_state');
         } catch (\Exception $e) {
             \Log::error('Google callback error: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
 
             $frontendUrl = env('FRONTEND_URL');
             return redirect()->away($frontendUrl . '/login?error=callback_failed');
